@@ -146,3 +146,6 @@ az network nsg rule create \
 echo "Port 22 added to NSG: $nsgName"
 
 echo "VMSS script completed!"
+
+read anyKey
+echo $anyKey pressed
