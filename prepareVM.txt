@@ -1,0 +1,40 @@
+# install Python and update pip.
+sudo apt update
+sudo apt install python3.7
+python3 --version
+sudo apt install python3-pip
+sudo -H pip3 install --upgrade pip
+
+# Install and start the Redis server
+$ wget https://download.redis.io/releases/redis-6.2.6.tar.gz
+$ tar xzf redis-6.2.6.tar.gz
+$ cd redis-6.2.6
+$ make
+
+$ src/redis-server
+
+# test redis server
+$ src/redis-cli
+redis> set foo bar
+OK
+redis> get foo
+"bar"
+
+# clone azure voting app
+git clone https://github.com/larmart/project-enhancing-applications.git
+cd project-enhancing-applications/
+git checkout Deploy_to_VMSS
+
+
+# Create Venv
+sudo  apt-get install python3-venv
+python3 -m venv .venv 
+source .venv/bin/activate
+
+# Install dependencies:
+pip3 install -r requirements.txt
+
+
+# Run App: Navigate to the azure-vote/ folder if not already
+cd azure-vote/
+python3 main.py
