@@ -1,0 +1,78 @@
+   
+########################################################################
+## Next, create a Container Registry in Azure to store the image, 
+## and AKS can later pull them during deployment to the AKS cluster.
+########################################################################
+   # Assuming the acdnd-c4-project resource group is still available with you
+   # ACR name should not have upper case letter
+   az acr create --resource-group acdnd-c4-project --name acr20220321 --sku Basic
+   
+   # Log in to the ACR
+   az acr login --name acr20220321
+   
+   # Get the ACR login server name
+   # To use the azure-vote-front container image with ACR, the image needs to be tagged with the login server address of your registry. 
+   # Find the login server address of your registry
+   az acr show --name acr20220321 --query loginServer --output table
+   
+   >>>Result
+	----------------------
+	acr20220321.azurecr.io
+   
+   # Associate a tag to the local image. You can use a different tag (say v2, v3, v4, ....) everytime you edit the underlying image. 
+   docker tag azure-vote-front:v1 acr20220321.azurecr.io/azure-vote-front:v1
+   
+   # Now you will see acr20220321.azurecr.io/azure-vote-front:v1 if you run "docker images"
+   # Push the local registry to remote ACR
+   docker push acr20220321.azurecr.io/azure-vote-front:v1
+   
+   # Verify if your image is up in the cloud.
+   az acr repository list --name acr20220321 --output table
+   
+   # Associate the AKS cluster with the ACR
+   az aks update -n udacity-cluster -g acdnd-c4-project --attach-acr acr20220321
+   
+#####################################################
+##  deploy the images to the AKS cluster
+#####################################################
+   # Get the ACR login server name
+   az acr show --name acr20220321 --query loginServer --output table
+   
+   # Make sure that the manifest file *azure-vote-all-in-one-redis.yaml*, has `acr20220321.azurecr.io/azure-vote-front:v1` as the image path.  
+   # Deploy the application. Run the command below from the parent directory where the *azure-vote-all-in-one-redis.yaml* file is present. 
+   kubectl apply -f azure-vote-all-in-one-redis.yaml
+   
+   # Test the application at the External IP
+   # It will take a few minutes to come alive. 
+   kubectl get service azure-vote-front --watch
+   
+   # You can also verify that the service is running like this
+   kubectl get service
+   
+   # Check the status of each node
+   kubectl get pods
+
+######################################################
+## Redeploy Application
+######################################################
+# Stop and remove the local containers
+docker-compose down
+
+# Recreate containers because the frontend application has changed in the steps above 
+docker-compose up -d --build --force-recreate
+
+# Check the application running at http://localhost:8080/
+# Tag the newly generated local image with the new tag, say "v2"
+docker tag mcr.microsoft.com/azuredocs/azure-vote-front:v1 acr20220321.azurecr.io/azure-vote-front:v2
+
+# Login to the the ACR 
+az acr login --name acr20220321
+
+# Push the local image to the existing ACR 
+docker push acr20220321.azurecr.io/azure-vote-front:v2
+
+# Update the deployment image 
+kubectl set image deployment azure-vote-front azure-vote-front=acr20220321.azurecr.io/azure-vote-front:v2
+
+# Test the new deployment - use the external IP in your browser. 
+kubectl get service azure-vote-front --watch
